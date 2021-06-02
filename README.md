@@ -4,7 +4,7 @@ I will use this repository to collect the assignment submissions for the Data Sc
 ## How to submit the Assignments?
 1. Fork this repository. 
 2. Push all the files that you want to submit in the **appropriate** folder of the forked repo.
-3. Create a pull request.
+3. Create a pull request **only during the submission window**.
 4. Before the next assignment, fetch upstream your forked repo.
 5. Go to Step 2.
 
