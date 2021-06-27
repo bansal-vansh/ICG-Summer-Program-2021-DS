@@ -1,0 +1,135 @@
+# This is a CNN Sequential Model implementation on the Fashion MNIST dataset. The code blocks which I played with and weren't effective have been deleted, and also the error-detection code sections, such as print(), type() etc. Hence the code has shortened to effectively about 100 lines.
+# Importing various libraries, models, layers and the dataset.
+
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+import matplotlib.pyplot as plt
+import keras
+
+from sklearn.model_selection import train_test_split
+
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropout, Activation, BatchNormalization
+from keras.optimizers import Adam
+from keras.datasets import fashion_mnist
+
+#---------------------------------------------------------------------------------------------------------------------
+# Loading data onto our variables.
+
+(X_train, Y_train), (X_test, Y_test) = fashion_mnist.load_data()
+assert X_train.shape == (60000, 28, 28)
+assert X_test.shape == (10000, 28, 28)
+assert Y_train.shape == (60000,)
+assert Y_test.shape == (10000,)
+
+#---------------------------------------------------------------------------------------------------------------------
+# Splitting training data into training and validation datasets.
+
+X_train, X_validate, Y_train, Y_validate = train_test_split(X_train, Y_train, test_size = 0.2) #random_state=12345)
+X_train.shape[0]
+
+#---------------------------------------------------------------------------------------------------------------------
+# Defining shapes, batch size and number of epochs, and reshaping dataset.
+
+im_rows = 28
+im_cols = 28
+n_batch_size = 500
+n_epochs = 50
+im_shape = (im_rows, im_cols, 1)
+
+X_train = X_train.reshape(X_train.shape[0], *im_shape)
+X_test = X_test.reshape(X_test.shape[0], *im_shape)
+X_validate = X_validate.reshape(X_validate.shape[0], *im_shape)
+
+#---------------------------------------------------------------------------------------------------------------------
+# Defining our Sequential CNN model using Conv2D, MaxPooling2D, and Dense layers, while also applying BatchNormalization and Dropout layers. 
+
+cnn_model = Sequential([
+    Conv2D(filters=32, kernel_size=3, input_shape=im_shape, activation='relu'),
+    BatchNormalization(),
+    Conv2D(filters=32, kernel_size=3, activation='relu'),
+    BatchNormalization(),
+    MaxPooling2D(pool_size=4),
+    Dropout(0.3),
+
+    Flatten(),
+    Dense(512, activation='relu'),
+    BatchNormalization(),
+    Dropout(0.3),
+    Dense(128, activation='relu'),
+    #BatchNormalization(),
+    #Dropout(0.3),
+    #Dense(32, activation='relu'),
+    #BatchNormalization(),
+    Dropout(0.3),
+    Dense(10, activation='softmax')
+])
+
+#---------------------------------------------------------------------------------------------------------------------
+# Compiling and running our model.
+
+cnn_model.compile(
+    optimizer=Adam(learning_rate=0.00095),
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+cnnm = cnn_model.fit(
+    X_train, Y_train, batch_size=n_batch_size,
+    epochs=n_epochs, verbose=1,
+    validation_data = (X_validate, Y_validate),
+)
+
+#---------------------------------------------------------------------------------------------------------------------
+# Taking lists of various outputs, and turning accuracy into percentage. Defines the range of epochs to be plotted.
+
+loss_train = cnnm.history['loss']
+loss_valid = cnnm.history['val_loss']
+accu_train = [100*i for i in cnnm.history['accuracy']]
+accu_valid = [100*i for i in cnnm.history['val_accuracy']]
+
+epochs = range(1, 1+n_epochs)
+
+#---------------------------------------------------------------------------------------------------------------------
+# Displays various output values.
+
+print('              Training Loss is {:.4f}'.format(loss_train[-1]))
+print('            Validation Loss is {:.4f}'.format(loss_valid[-1]))
+print(' ')
+print('          Training Accuracy is {:.2f}%'.format(accu_train[-1]))
+print('        Validation Accuracy is {:.2f}%'.format(accu_valid[-1]))
+print(' ')
+print('  Maximum Training Accuracy is {:.2f}%'.format(max(accu_train)))
+print('Maximum Validation Accuracy is {:.2f}%'.format(max(accu_valid)))
+
+#---------------------------------------------------------------------------------------------------------------------
+# Displays the plot of losses.
+
+plt.plot(epochs, loss_train, color='lightseagreen', label='Training Loss')
+plt.plot(epochs, loss_valid, color='crimson', label='Validation Loss')
+plt.title('Training and Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
+
+#---------------------------------------------------------------------------------------------------------------------
+# Displays the plot of accuracies.
+
+plt.plot(epochs, accu_train, color='lightseagreen', label='Training Accuracy')
+plt.plot(epochs, accu_valid, color='crimson', label='Validation Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
+#---------------------------------------------------------------------------------------------------------------------
+# It shows that our model is overfitting by around 4%. I don't have enough time to work on it, hence leaving it as is.
+# References:
+# 1. Deeplizard YouTube channel's playlist on Neural Networks was a great help: https://www.youtube.com/playlist?list=PLZbbT5o_s2xq7LwI2y8_QtvuXZedL6tQU
+# 2. Mark Jay's YouTube videos also assisted: https://www.youtube.com/playlist?list=PLX-LrBk6h3wR27xylD3Rsx4bbA15jlcYC
+# 3. For getting a hang of layers, I studied from this model: https://colab.research.google.com/github/timlovescoding/FASHION-MNIST/blob/master/Tim_Fashion_MNIST.ipynb
+# 4. Obviously, Keras: https://keras.io/
+# 5. For plotting the output, I studied from this site: https://www.pluralsight.com/guides/data-visualization-deep-learning-model-using-matplotlib
